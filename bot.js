@@ -16,7 +16,7 @@ function startBot() {
 
   function getState(chatId) {
     if (!userState.has(chatId)) {
-      userState.set(chatId, { step: 'idle', niche: '', audience: '', offer: '' });
+      userState.set(chatId, { step: 'idle', niche: '', audience: '', offer: '', history: {} });
     }
     return userState.get(chatId);
   }
@@ -37,7 +37,8 @@ function startBot() {
 
   bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
-    userState.set(chatId, { step: 'ask_niche', niche: '', audience: '', offer: '' });
+    console.log(`Chat ID для ADMIN_CHAT_ID: ${chatId}`);
+    userState.set(chatId, { step: 'ask_niche', niche: '', audience: '', offer: '', history: {} });
     bot.sendMessage(chatId,
       '👋 Вітаю в *Контент-майстерні*!\n\nЦе безкоштовний генератор контенту й реклами для блогу: 8 готових гілок — від оферу до запуску таргету.\n\nСпочатку заповнимо контекст. Напиши свою *нішу/тему* блогу:',
       { parse_mode: 'Markdown' });
@@ -45,7 +46,7 @@ function startBot() {
 
   bot.onText(/\/reset/, (msg) => {
     const chatId = msg.chat.id;
-    userState.set(chatId, { step: 'ask_niche', niche: '', audience: '', offer: '' });
+    userState.set(chatId, { step: 'ask_niche', niche: '', audience: '', offer: '', history: {} });
     bot.sendMessage(chatId, 'Контекст скинуто. Напиши свою нішу/тему блогу:');
   });
 
@@ -78,7 +79,7 @@ function startBot() {
     const state = getState(chatId);
 
     if (query.data === 'edit_context') {
-      userState.set(chatId, { step: 'ask_niche', niche: '', audience: '', offer: '' });
+      userState.set(chatId, { step: 'ask_niche', niche: '', audience: '', offer: '', history: {} });
       bot.answerCallbackQuery(query.id);
       return bot.sendMessage(chatId, 'Напиши свою нішу/тему блогу:');
     }
@@ -90,13 +91,15 @@ function startBot() {
       const waitMsg = await bot.sendMessage(chatId, `⏳ Генерую *${card.n}. ${card.title}*...`, { parse_mode: 'Markdown' });
 
       try {
-        const result = await generateContent(idx, state);
+        const prevForCard = state.history[idx] || [];
+        const result = await generateContent(idx, state, prevForCard);
+        state.history[idx] = [...prevForCard, result];
         await bot.editMessageText(`✅ *${card.n}. ${card.title}*\n\n${result}`, {
           chat_id: chatId,
           message_id: waitMsg.message_id,
           parse_mode: 'Markdown'
         });
-        await bot.sendMessage(chatId, 'Обери наступну картку 👇', { reply_markup: mainMenuKeyboard() });
+        await bot.sendMessage(chatId, 'Обери наступну картку 👇 (та сама картка дасть новий варіант, не повтор)', { reply_markup: mainMenuKeyboard() });
       } catch (err) {
         console.error(err);
         await bot.editMessageText('❌ Сталася помилка генерації. Спробуй ще раз трохи пізніше.', {

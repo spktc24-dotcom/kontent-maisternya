@@ -296,12 +296,15 @@
     <div class="hint">Результат враховує маркетингову логіку, механіку алгоритму Instagram і (де доречно) план запуску таргетованої реклами. Редагуй під себе.</div>
   </div>
 
-  <footer>кожна картка — окремий, самостійний генератор · дані не зберігаються ніде</footer>
+  <footer>кожна наступна генерація враховує попередні · пам'ять живе, поки відкрита вкладка</footer>
 </div>
 
 <script>
 // Промпти й системна інструкція тепер живуть тільки на сервері (content.js),
 // щоб не світити внутрішню логіку генерації у публічному коді сторінки.
+// sessionId живе, поки відкрита ця вкладка — завдяки йому сервер пам'ятає,
+// що вже було згенеровано, і наступного разу дає нові варіанти, а не повтори.
+let sessionId = null;
 const cards = [
   {n:'01', title:'Тема і оффер', desc:'З чого починається продукт'},
   {n:'02', title:'Шапка профілю', desc:'Перше враження за 5 секунд'},
@@ -364,13 +367,14 @@ async function generate(i, el) {
     const response = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cardIndex: i, niche, audience, offer })
+      body: JSON.stringify({ cardIndex: i, niche, audience, offer, sessionId })
     });
     const data = await response.json();
     if (!response.ok) {
       output.textContent = data.error || 'Сталася помилка генерації. Спробуй ще раз.';
       return;
     }
+    if (data.sessionId) sessionId = data.sessionId;
     const text = (data.text || '').trim();
     output.textContent = text || 'Не вдалося отримати відповідь. Спробуй ще раз.';
   } catch (err) {

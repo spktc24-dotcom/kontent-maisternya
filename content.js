@@ -37,7 +37,7 @@ const cards = [
     prompt: 'Запропонуй 3 ідеї лід-магнітів і опиши, як анонсувати кожен в одному відео. Додай коротку воронку "холодна аудиторія → лід-магніт → прогрів → пропозиція" з поясненням, де підключати таргетовану рекламу і як налаштувати ретаргетинг тих, хто завантажив лід-магніт.' }
 ];
 
-async function generateContent(cardIndex, context) {
+async function generateContent(cardIndex, context, history = []) {
   const card = cards[cardIndex];
   if (!card) throw new Error('Невірний індекс картки');
   if (!ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY не налаштований на сервері');
@@ -45,7 +45,16 @@ async function generateContent(cardIndex, context) {
   const { niche = '', audience = '', offer = '' } = context || {};
   const contextLine = `Ніша: ${niche || 'загальна тематика блогу'}. Аудиторія: ${audience || 'широка аудиторія'}.` +
     (offer ? ` Продукт/проблема: ${offer}.` : '');
-  const userPrompt = `${contextLine}\n\nЗавдання: ${card.prompt}\n\nВідповідай українською, конкретно і практично, без зайвих вступів.`;
+
+  let historyBlock = '';
+  if (history && history.length > 0) {
+    const prevList = history
+      .map((h, i) => `--- Варіант, згенерований раніше (${i + 1}) ---\n${h}`)
+      .join('\n\n');
+    historyBlock = `\n\nВАЖЛИВО: це вже НЕ перша генерація для цього запиту. Ось усе, що вже було згенеровано раніше для цієї ж ніші й цієї ж картки:\n\n${prevList}\n\nТвоє завдання зараз — дати НАСТУПНУ партію: нові варіанти, які НЕ повторюють попередні ні за змістом, ні за формулюваннями, а розвивають тему далі або пропонують інший ракурс. Не переказуй і не перефразовуй те, що вже було.`;
+  }
+
+  const userPrompt = `${contextLine}\n\nЗавдання: ${card.prompt}${historyBlock}\n\nВідповідай українською, конкретно і практично, без зайвих вступів.`;
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -75,4 +84,27 @@ async function generateContent(cardIndex, context) {
     .trim();
 }
 
-module.exports = { cards, SYSTEM_PROMPT, generateContent };
+// Надсилає копію будь-якої генерації в Telegram власнику (ADMIN_CHAT_ID).
+// Мовчки нічого не робить, якщо BOT_TOKEN або ADMIN_CHAT_ID не задані —
+// це не критична функція, і вона ніколи не повинна ламати основну генерацію.
+async function notifyTelegram(text) {
+  const BOT_TOKEN = process.env.BOT_TOKEN;
+  const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+  if (!BOT_TOKEN || !ADMIN_CHAT_ID) return;
+
+  try {
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: ADMIN_CHAT_ID,
+        text: text.slice(0, 4000), // Telegram обмежує повідомлення ~4096 символів
+        parse_mode: 'Markdown'
+      })
+    });
+  } catch (err) {
+    console.error('Не вдалось відправити копію в Telegram:', err.message);
+  }
+}
+
+module.exports = { cards, SYSTEM_PROMPT, generateContent, notifyTelegram };
