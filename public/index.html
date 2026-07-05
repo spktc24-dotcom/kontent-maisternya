@@ -113,7 +113,7 @@
     color:var(--ink-soft);
     margin-bottom:6px;
   }
-  input, textarea{
+  input, textarea, select{
     width:100%;
     border:1.5px solid rgba(42,33,24,.25);
     background:var(--paper-2);
@@ -124,7 +124,7 @@
     color:var(--ink);
     resize:vertical;
   }
-  input:focus, textarea:focus{
+  input:focus, textarea:focus, select:focus{
     outline:2px solid var(--teal);
     outline-offset:1px;
   }
@@ -278,6 +278,35 @@
     outline:2px solid var(--teal);
     outline-offset:1px;
   }
+  .card-fields{
+    margin-bottom:16px;
+  }
+  .card-fields .fields{
+    grid-template-columns:1fr 1fr;
+  }
+  .generate-btn-row{
+    margin-bottom:18px;
+  }
+  .chips{
+    display:none;
+    gap:8px;
+    flex-wrap:wrap;
+    margin:0 0 18px;
+  }
+  .chips.show{ display:flex; }
+  .chip{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    padding:8px 14px;
+    background:var(--paper);
+    border:1.5px solid rgba(42,33,24,.3);
+    border-radius:999px;
+    cursor:pointer;
+    color:var(--ink);
+    transition: border-color .15s ease, color .15s ease;
+  }
+  .chip:hover{ border-color:var(--teal); color:var(--teal); }
+  .chip.custom{ color:var(--ink-soft); font-style:italic; }
   footer{
     text-align:center;
     margin-top:60px;
@@ -325,7 +354,15 @@
         <button class="btn secondary" id="closeBtn">Закрити</button>
       </div>
     </div>
-    <div class="output" id="output">Заповни контекст вище і натисни картку зліва.</div>
+
+    <div class="card-fields" id="cardFields"></div>
+    <div class="generate-btn-row">
+      <button class="btn" id="generateBtn">Згенерувати</button>
+    </div>
+
+    <div class="chips" id="topicChips"></div>
+
+    <div class="output" id="output">Заповни поля вище (або залиш порожніми) і натисни «Згенерувати».</div>
     <div class="hint">Результат враховує маркетингову логіку, механіку алгоритму Instagram і (де доречно) план запуску таргетованої реклами. Редагуй під себе.</div>
 
     <div class="refine-box" id="refineBox">
@@ -345,14 +382,51 @@
 // що вже було згенеровано, і наступного разу дає нові варіанти, а не повтори.
 let sessionId = null;
 const cards = [
-  {n:'01', title:'Тема і оффер', desc:'З чого починається продукт'},
-  {n:'02', title:'Шапка профілю', desc:'Перше враження за 5 секунд'},
-  {n:'03', title:'Програма продукту', desc:'Структура, що веде до результату'},
-  {n:'04', title:'Сценарії Reels', desc:'Короткі відео, що набирають перегляди'},
-  {n:'05', title:'Сценарії каруселей', desc:'Пости, які зберігають і репостять'},
-  {n:'06', title:'Сценарії Stories', desc:'Історії, які дивляться до кінця'},
-  {n:'07', title:'Рекламні креативи', desc:'Сценарії для платного трафіку + запуск в Meta Ads'},
-  {n:'08', title:'Лід-магніти', desc:'Відео, що збирають базу + воронка реклами'}
+  {n:'01', title:'Тема і оффер', desc:'З чого починається продукт',
+    extraFields: [
+      { key:'result', label:'Який результат отримує клієнт? (опційно)', placeholder:'напр. +5 клієнтів на манікюр за тиждень' },
+      { key:'format', label:'Формат продукту (опційно)', type:'select', options:['Онлайн-курс','Консультація/менторство','Послуга','Фізичний товар','Підписка/членство'] }
+    ] },
+  {n:'02', title:'Шапка профілю', desc:'Перше враження за 5 секунд',
+    extraFields: [
+      { key:'name', label:'Ім\'я/нік (опційно)', placeholder:'напр. Марія Іваненко' },
+      { key:'proof', label:'Регалії/соц. доказ (опційно)', placeholder:'напр. досягнення, цифри, кейси' },
+      { key:'tone', label:'Тон голосу (опційно)', placeholder:'напр. дружній, експертний, з гумором' }
+    ] },
+  {n:'03', title:'Програма продукту', desc:'Структура, що веде до результату',
+    topicLabel: 'Тема і офер продукту (опційно)', topicPlaceholder: 'встав сюди свою тему + офер, якщо вже є',
+    extraFields: [
+      { key:'duration', label:'Тривалість (опційно)', placeholder:'напр. 6 тижнів' },
+      { key:'price', label:'Орієнтовна ціна (опційно)', placeholder:'напр. 150$ або "не знаю, порадь"' }
+    ] },
+  {n:'04', title:'Сценарії Reels', desc:'Короткі відео, що набирають перегляди',
+    topicLabel: 'Про що рилс? (опційно)', topicPlaceholder: 'тема або проблема, яку розкриваємо',
+    extraFields: [
+      { key:'goal', label:'Ціль рилс (опційно)', type:'select', options:['Охоплення','Прогрів','Продаж'] },
+      { key:'format', label:'Формат (опційно)', placeholder:'напр. talking head, до/після, скрайб' }
+    ] },
+  {n:'05', title:'Сценарії каруселей', desc:'Пости, які зберігають і репостять',
+    topicLabel: 'Тема каруселі (опційно)', topicPlaceholder: 'про що розповідаємо',
+    extraFields: [
+      { key:'slides', label:'Кількість слайдів (опційно)', placeholder:'напр. 8' }
+    ] },
+  {n:'06', title:'Сценарії Stories', desc:'Історії, які дивляться до кінця',
+    topicLabel: 'Привід/подія (опційно)', topicPlaceholder: 'напр. запуск курсу, будній день з клієнтом...',
+    extraFields: [
+      { key:'interactive', label:'Тип інтерактиву (опційно)', type:'select', options:['Опитування','Тест/вікторина','Слайдер','Питання від підписників'] }
+    ] },
+  {n:'07', title:'Рекламні креативи', desc:'Сценарії для платного трафіку + запуск в Meta Ads',
+    extraFields: [
+      { key:'promoted', label:'Що рекламуємо (опційно)', placeholder:'напр. створення капсули' },
+      { key:'goal', label:'Ціль кампанії (опційно)', type:'select', options:['Ліди/заявки','Трафік на профіль','Продажі/конверсії','Впізнаваність бренду'] }
+    ] },
+  {n:'08', title:'Лід-магніти', desc:'Відео, що збирають базу + воронка реклами',
+    topicLabel: 'Тема відео / проблема (опційно)', topicPlaceholder: 'що розкриваємо, яку біль закриваємо',
+    extraFields: [
+      { key:'leadMagnet', label:'Що віддаємо безкоштовно (опційно)', placeholder:'напр. PDF-гайд, шаблон, чек-лист, міні-курс' },
+      { key:'nextStep', label:'Куди ведемо після лід-магніту (опційно)', placeholder:'напр. консультація, курс, спільнота' },
+      { key:'videoLength', label:'Бажана тривалість відео (опційно)', placeholder:'напр. 8-12 хв' }
+    ] }
 ];
 
 const grid = document.getElementById('grid');
@@ -360,8 +434,8 @@ cards.forEach((c, i) => {
   const el = document.createElement('div');
   el.className = 'card';
   el.dataset.index = i;
-  el.innerHTML = `<div class="num">${c.n}</div><h3>${c.title}</h3><p>${c.desc}</p><div class="go">натисни, щоб згенерувати ↗</div>`;
-  el.addEventListener('click', () => generate(i, el));
+  el.innerHTML = `<div class="num">${c.n}</div><h3>${c.title}</h3><p>${c.desc}</p><div class="go">натисни, щоб відкрити ↗</div>`;
+  el.addEventListener('click', () => openCard(i, el));
   grid.appendChild(el);
 });
 
@@ -373,6 +447,9 @@ const closeBtn = document.getElementById('closeBtn');
 const refineBox = document.getElementById('refineBox');
 const refineInput = document.getElementById('refineInput');
 const refineBtn = document.getElementById('refineBtn');
+const cardFields = document.getElementById('cardFields');
+const generateBtn = document.getElementById('generateBtn');
+const topicChips = document.getElementById('topicChips');
 
 let currentCardIndex = null;
 
@@ -400,6 +477,51 @@ function getContext() {
   };
 }
 
+// Малює поля картки (тема + масив додаткових полів), якщо вони описані для цієї картки
+function renderCardFields(card) {
+  cardFields.innerHTML = '';
+  if (!card.topicLabel && !(card.extraFields && card.extraFields.length)) return;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'fields';
+
+  if (card.topicLabel) {
+    const f = document.createElement('div');
+    f.className = 'field full';
+    f.innerHTML = `<label>${card.topicLabel}</label><input type="text" id="topicInput" placeholder="${card.topicPlaceholder || ''}">`;
+    wrap.appendChild(f);
+  }
+
+  (card.extraFields || []).forEach(field => {
+    const f = document.createElement('div');
+    f.className = 'field';
+    if (field.type === 'select') {
+      const options = ['<option value="">Не знаю — обери сам</option>']
+        .concat(field.options.map(o => `<option value="${o}">${o}</option>`))
+        .join('');
+      f.innerHTML = `<label>${field.label}</label><select id="extra_${field.key}">${options}</select>`;
+    } else {
+      f.innerHTML = `<label>${field.label}</label><input type="text" id="extra_${field.key}" placeholder="${field.placeholder || ''}">`;
+    }
+    wrap.appendChild(f);
+  });
+
+  cardFields.appendChild(wrap);
+}
+
+function getFieldValue(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function getExtraFieldsValues(card) {
+  const result = {};
+  (card.extraFields || []).forEach(field => {
+    result[field.key] = getFieldValue(`extra_${field.key}`);
+  });
+  return result;
+}
+
 async function callGenerate(i, extraBody) {
   const { niche, audience, offer } = getContext();
   const response = await fetch("/api/generate", {
@@ -415,7 +537,20 @@ async function callGenerate(i, extraBody) {
   return (data.text || '').trim();
 }
 
-async function generate(i, el) {
+async function runGeneration(i, topic, extraFields) {
+  output.textContent = 'Генерую...';
+  refineBox.classList.remove('show');
+  try {
+    const text = await callGenerate(i, { topic, extraFields });
+    output.textContent = text || 'Не вдалося отримати відповідь. Спробуй ще раз.';
+    if (text) refineBox.classList.add('show');
+  } catch (err) {
+    output.textContent = err.message || 'Сталася помилка генерації. Перевір з\'єднання і спробуй ще раз.';
+    console.error(err);
+  }
+}
+
+function openCard(i, el) {
   const card = cards[i];
   document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
@@ -424,18 +559,66 @@ async function generate(i, el) {
   panelTitle.textContent = `${card.n}. ${card.title}`;
   panel.classList.add('show');
   refineBox.classList.remove('show');
-  output.textContent = 'Генерую...';
+  topicChips.classList.remove('show');
+  topicChips.innerHTML = '';
+  output.textContent = (card.topicLabel || (card.extraFields && card.extraFields.length))
+    ? 'Заповни поля вище (або залиш порожніми) і натисни «Згенерувати».'
+    : 'Натисни «Згенерувати».';
+  renderCardFields(card);
   panel.scrollIntoView({behavior:'smooth', block:'nearest'});
-
-  try {
-    const text = await callGenerate(i);
-    output.textContent = text || 'Не вдалося отримати відповідь. Спробуй ще раз.';
-    if (text) refineBox.classList.add('show');
-  } catch (err) {
-    output.textContent = err.message || 'Сталася помилка генерації. Перевір з\'єднання і спробуй ще раз.';
-    console.error(err);
-  }
 }
+
+generateBtn.addEventListener('click', async () => {
+  const i = currentCardIndex;
+  if (i === null) return;
+  const card = cards[i];
+  const topic = getFieldValue('topicInput');
+  const extraFields = getExtraFieldsValues(card);
+
+  topicChips.classList.remove('show');
+  topicChips.innerHTML = '';
+
+  // Якщо картка передбачає тему, і людина її не вказала — спершу пропонуємо варіанти на вибір
+  if (card.topicLabel && !topic) {
+    const originalLabel = generateBtn.textContent;
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Підбираю теми...';
+    output.textContent = 'Підбираю кілька варіантів теми на вибір...';
+    try {
+      const { niche, audience, offer } = getContext();
+      const response = await fetch('/api/suggest-topics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cardIndex: i, niche, audience, offer })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Не вдалось підібрати теми.');
+
+      const topics = data.topics || [];
+      output.textContent = 'Обери тему нижче, або впиши свою в поле вище і натисни «Згенерувати» ще раз.';
+      topics.forEach(t => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        chip.textContent = t;
+        chip.addEventListener('click', () => {
+          document.getElementById('topicInput').value = t;
+          topicChips.classList.remove('show');
+          runGeneration(i, t, extraFields);
+        });
+        topicChips.appendChild(chip);
+      });
+      topicChips.classList.add('show');
+    } catch (err) {
+      output.textContent = err.message || 'Не вдалось підібрати теми. Спробуй ще раз.';
+    } finally {
+      generateBtn.disabled = false;
+      generateBtn.textContent = originalLabel;
+    }
+    return;
+  }
+
+  runGeneration(i, topic, extraFields);
+});
 
 refineBtn.addEventListener('click', async () => {
   const instruction = refineInput.value.trim();
