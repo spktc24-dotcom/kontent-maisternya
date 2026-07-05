@@ -499,12 +499,22 @@ function renderCardFields(card) {
     if (field.type === 'select') {
       const options = ['<option value="">Не знаю — обери сам</option>']
         .concat(field.options.map(o => `<option value="${o}">${o}</option>`))
+        .concat(['<option value="__custom__">Напишу сам(а)...</option>'])
         .join('');
-      f.innerHTML = `<label>${field.label}</label><select id="extra_${field.key}">${options}</select>`;
+      f.innerHTML = `<label>${field.label}</label>` +
+        `<select id="extra_${field.key}">${options}</select>` +
+        `<input type="text" id="extra_${field.key}_custom" placeholder="Напиши свій варіант тут" style="display:none; margin-top:8px;">`;
+      wrap.appendChild(f);
+      const selectEl = f.querySelector('select');
+      const customEl = f.querySelector('input');
+      selectEl.addEventListener('change', () => {
+        customEl.style.display = selectEl.value === '__custom__' ? 'block' : 'none';
+        if (selectEl.value === '__custom__') customEl.focus();
+      });
     } else {
       f.innerHTML = `<label>${field.label}</label><input type="text" id="extra_${field.key}" placeholder="${field.placeholder || ''}">`;
+      wrap.appendChild(f);
     }
-    wrap.appendChild(f);
   });
 
   cardFields.appendChild(wrap);
@@ -518,7 +528,8 @@ function getFieldValue(id) {
 function getExtraFieldsValues(card) {
   const result = {};
   (card.extraFields || []).forEach(field => {
-    result[field.key] = getFieldValue(`extra_${field.key}`);
+    const raw = getFieldValue(`extra_${field.key}`);
+    result[field.key] = raw === '__custom__' ? getFieldValue(`extra_${field.key}_custom`) : raw;
   });
   return result;
 }
