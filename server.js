@@ -21,7 +21,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('/api/generate', async (req, res) => {
   try {
-    const { cardIndex, niche, audience, offer, sessionId: incomingSessionId } = req.body || {};
+    const { cardIndex, niche, audience, offer, sessionId: incomingSessionId, refine, instruction } = req.body || {};
     if (typeof cardIndex !== 'number') {
       return res.status(400).json({ error: 'cardIndex обов\'язковий і має бути числом (0-7)' });
     }
@@ -31,15 +31,22 @@ app.post('/api/generate', async (req, res) => {
     const sessionHistory = sessions.get(sessionId);
     const history = sessionHistory[cardIndex] || [];
 
-    const text = await generateContent(cardIndex, { niche, audience, offer }, history);
+    const text = await generateContent(cardIndex, { niche, audience, offer }, history, refine ? instruction : null);
 
-    sessionHistory[cardIndex] = [...history, text];
+    if (refine && history.length > 0) {
+      // Уточнення замінює останню версію, а не додається як ще один окремий варіант
+      sessionHistory[cardIndex] = [...history.slice(0, -1), text];
+    } else {
+      sessionHistory[cardIndex] = [...history, text];
+    }
 
     const card = cards[cardIndex];
     notifyTelegram(
-      `🌐 *Нова генерація з сайту*\n` +
+      `🌐 *Нова генерація з сайту*${refine ? ' (уточнення)' : ''}\n` +
       `Картка: ${card.n}. ${card.title}\n` +
-      `Ніша: ${niche || '—'}\nАудиторія: ${audience || '—'}\n\n${text}`,
+      `Ніша: ${niche || '—'}\nАудиторія: ${audience || '—'}\n` +
+      (refine ? `Запит на зміну: ${instruction}\n` : '') +
+      `\n${text}`,
       getAdminChatId()
     ); // навмисно без await — не має затримувати відповідь сайту користувачу
 

@@ -37,7 +37,7 @@ const cards = [
     prompt: 'Запропонуй 3 ідеї лід-магнітів і опиши, як анонсувати кожен в одному відео. Додай коротку воронку "холодна аудиторія → лід-магніт → прогрів → пропозиція" з поясненням, де підключати таргетовану рекламу і як налаштувати ретаргетинг тих, хто завантажив лід-магніт.' }
 ];
 
-async function generateContent(cardIndex, context, history = []) {
+async function generateContent(cardIndex, context, history = [], refineInstruction = null) {
   const card = cards[cardIndex];
   if (!card) throw new Error('Невірний індекс картки');
   if (!ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY не налаштований на сервері');
@@ -47,7 +47,10 @@ async function generateContent(cardIndex, context, history = []) {
     (offer ? ` Продукт/проблема: ${offer}.` : '');
 
   let historyBlock = '';
-  if (history && history.length > 0) {
+  if (refineInstruction && history.length > 0) {
+    const lastResult = history[history.length - 1];
+    historyBlock = `\n\nВАЖЛИВО: користувач просить ДООПРАЦЮВАТИ вже згенерований результат, а не робити новий з нуля. Ось поточна версія:\n\n${lastResult}\n\nЗапит на зміну від користувача: "${refineInstruction}"\n\nПерепиши цей результат з урахуванням запиту користувача, зберігаючи все, що не стосується запиту, без змін. Видай повну оновлену версію (не тільки змінений фрагмент).`;
+  } else if (history && history.length > 0) {
     const prevList = history
       .map((h, i) => `--- Варіант, згенерований раніше (${i + 1}) ---\n${h}`)
       .join('\n\n');
