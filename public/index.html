@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Контент-майстерня — безкоштовний генератор</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --board:#23281f;
+    --board-2:#2b3328;
+    --paper:#ede3c8;
+    --paper-2:#f3ead4;
+    --ink:#2a2118;
+    --ink-soft:#5b5142;
+    --pin:#b23a2e;
+    --amber:#c98a2c;
+    --teal:#3c6e63;
+    --teal-soft:#e3ece9;
+    --shadow: 0 10px 25px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at top left, rgba(255,255,255,.035), transparent 60%),
+      repeating-linear-gradient(0deg, rgba(0,0,0,.05) 0 1px, transparent 1px 3px),
+      var(--board);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    padding: 40px 20px 80px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;}
+  .hero{
+    text-align:center;
+    margin-bottom:44px;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--amber);
+    font-size:12px;
+    font-weight:600;
+    margin-bottom:14px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(34px, 6vw, 58px);
+    color:var(--paper-2);
+    margin:0 0 14px;
+    line-height:1.05;
+  }
+  .sub{
+    color:#c9c4b3;
+    font-size:16px;
+    max-width:520px;
+    margin:0 auto;
+    line-height:1.5;
+  }
+  .free-tag{
+    display:inline-block;
+    margin-top:18px;
+    background:var(--teal);
+    color:#eef7f3;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:.08em;
+    padding:6px 14px;
+    border-radius:999px;
+  }
+
+  /* context card */
+  .context{
+    background:var(--paper);
+    border-radius:6px;
+    padding:26px 28px;
+    box-shadow:var(--shadow);
+    margin:0 auto 50px;
+    max-width:760px;
+    position:relative;
+    transform: rotate(-0.4deg);
+  }
+  .context::before{
+    content:"";
+    position:absolute; top:-10px; left:50%; transform:translateX(-50%);
+    width:18px; height:18px; border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #e2685c, var(--pin));
+    box-shadow:0 3px 4px rgba(0,0,0,.4);
+  }
+  .context h2{
+    font-family:'Fraunces', serif;
+    font-size:20px;
+    margin:4px 0 18px;
+    font-weight:600;
+  }
+  .fields{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  .field{grid-column:span 1;}
+  .field.full{grid-column:1 / -1;}
+  label{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  input, textarea{
+    width:100%;
+    border:1.5px solid rgba(42,33,24,.25);
+    background:var(--paper-2);
+    border-radius:4px;
+    padding:10px 12px;
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    color:var(--ink);
+    resize:vertical;
+  }
+  input:focus, textarea:focus{
+    outline:2px solid var(--teal);
+    outline-offset:1px;
+  }
+
+  /* grid of cards */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:26px 22px;
+  }
+  @media(max-width:820px){ .grid{grid-template-columns:repeat(2,1fr);} .fields{grid-template-columns:1fr;} }
+  @media(max-width:560px){ .grid{grid-template-columns:1fr;} }
+
+  .card{
+    background:var(--paper);
+    border-radius:4px;
+    padding:22px 20px 24px;
+    box-shadow:var(--shadow);
+    position:relative;
+    cursor:pointer;
+    transition: transform .18s ease, box-shadow .18s ease;
+    min-height:150px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .card:nth-child(odd){ transform: rotate(-1.1deg); }
+  .card:nth-child(even){ transform: rotate(1deg); }
+  .card:hover{ transform: rotate(0deg) translateY(-4px); box-shadow:0 16px 30px rgba(0,0,0,.4); }
+  .card.active{ transform: rotate(0deg) translateY(-4px); outline:2px solid var(--teal); }
+  .card::before{
+    content:"";
+    position:absolute; top:-9px; left:24px;
+    width:14px; height:14px; border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #e2685c, var(--pin));
+    box-shadow:0 3px 4px rgba(0,0,0,.35);
+  }
+  .num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--amber);
+    font-weight:600;
+  }
+  .card h3{
+    font-family:'Fraunces', serif;
+    font-size:19px;
+    margin:2px 0 2px;
+    font-weight:600;
+  }
+  .card p{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:0;
+    line-height:1.4;
+  }
+  .card .go{
+    margin-top:auto;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--teal);
+    letter-spacing:.04em;
+  }
+
+  /* output panel */
+  .panel{
+    display:none;
+    margin-top:34px;
+    background:var(--paper-2);
+    border-radius:6px;
+    padding:26px 28px;
+    box-shadow:var(--shadow);
+    position:relative;
+  }
+  .panel.show{display:block;}
+  .panel-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .panel-head h3{
+    font-family:'Fraunces', serif;
+    font-size:20px;
+    margin:0;
+  }
+  .actions{display:flex; gap:8px;}
+  button.btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:.04em;
+    border:none;
+    padding:9px 16px;
+    border-radius:4px;
+    cursor:pointer;
+    background:var(--teal);
+    color:#eef7f3;
+  }
+  button.btn.secondary{
+    background:transparent;
+    color:var(--ink-soft);
+    border:1.5px solid rgba(42,33,24,.3);
+  }
+  button.btn:disabled{opacity:.5; cursor:not-allowed;}
+  .output{
+    white-space:pre-wrap;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13.5px;
+    line-height:1.65;
+    color:var(--ink);
+    background:var(--paper);
+    border-radius:4px;
+    padding:18px 20px;
+    min-height:60px;
+  }
+  .hint{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:10px;
+  }
+  footer{
+    text-align:center;
+    margin-top:60px;
+    color:#8a8676;
+    font-size:12px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="eyebrow">workshop · 8 гілок контенту</div>
+    <h1>Контент-майстерня</h1>
+    <p class="sub">Заповни контекст один раз — і вибирай будь-яку картку. Кожен результат враховує маркетингову стратегію, логіку алгоритму Instagram і, де доречно, план запуску таргетованої реклами.</p>
+    <div class="free-tag">Повністю безкоштовно · без реєстрації</div>
+  </div>
+
+  <div class="context">
+    <h2>01. Контекст твого блогу</h2>
+    <div class="fields">
+      <div class="field">
+        <label>Ніша / тема</label>
+        <input id="niche" type="text" placeholder="напр. фітнес для мам, фінансова грамотність...">
+      </div>
+      <div class="field">
+        <label>Аудиторія</label>
+        <input id="audience" type="text" placeholder="напр. жінки 25-40, початківці підприємці...">
+      </div>
+      <div class="field full">
+        <label>Що продаєш / яку проблему вирішуєш (опційно)</label>
+        <textarea id="offer" rows="2" placeholder="напр. онлайн-курс з схуднення після пологів..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="panel" id="panel">
+    <div class="panel-head">
+      <h3 id="panelTitle">—</h3>
+      <div class="actions">
+        <button class="btn secondary" id="copyBtn">Скопіювати</button>
+        <button class="btn secondary" id="closeBtn">Закрити</button>
+      </div>
+    </div>
+    <div class="output" id="output">Заповни контекст вище і натисни картку зліва.</div>
+    <div class="hint">Результат враховує маркетингову логіку, механіку алгоритму Instagram і (де доречно) план запуску таргетованої реклами. Редагуй під себе.</div>
+  </div>
+
+  <footer>кожна картка — окремий, самостійний генератор · дані не зберігаються ніде</footer>
+</div>
+
+<script>
+// Промпти й системна інструкція тепер живуть тільки на сервері (content.js),
+// щоб не світити внутрішню логіку генерації у публічному коді сторінки.
+const cards = [
+  {n:'01', title:'Тема і оффер', desc:'З чого починається продукт'},
+  {n:'02', title:'Шапка профілю', desc:'Перше враження за 5 секунд'},
+  {n:'03', title:'Програма продукту', desc:'Структура, що веде до результату'},
+  {n:'04', title:'Сценарії Reels', desc:'Короткі відео, що набирають перегляди'},
+  {n:'05', title:'Сценарії каруселей', desc:'Пости, які зберігають і репостять'},
+  {n:'06', title:'Сценарії Stories', desc:'Історії, які дивляться до кінця'},
+  {n:'07', title:'Рекламні креативи', desc:'Сценарії для платного трафіку + запуск в Meta Ads'},
+  {n:'08', title:'Лід-магніти', desc:'Відео, що збирають базу + воронка реклами'}
+];
+
+const grid = document.getElementById('grid');
+cards.forEach((c, i) => {
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.dataset.index = i;
+  el.innerHTML = `<div class="num">${c.n}</div><h3>${c.title}</h3><p>${c.desc}</p><div class="go">натисни, щоб згенерувати ↗</div>`;
+  el.addEventListener('click', () => generate(i, el));
+  grid.appendChild(el);
+});
+
+const panel = document.getElementById('panel');
+const panelTitle = document.getElementById('panelTitle');
+const output = document.getElementById('output');
+const copyBtn = document.getElementById('copyBtn');
+const closeBtn = document.getElementById('closeBtn');
+
+closeBtn.addEventListener('click', () => {
+  panel.classList.remove('show');
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+});
+
+copyBtn.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(output.textContent);
+    copyBtn.textContent = 'Скопійовано ✓';
+    setTimeout(() => copyBtn.textContent = 'Скопіювати', 1500);
+  } catch(e) {
+    copyBtn.textContent = 'Не вдалось скопіювати';
+  }
+});
+
+async function generate(i, el) {
+  const card = cards[i];
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+
+  const niche = document.getElementById('niche').value.trim() || 'загальна тематика блогу';
+  const audience = document.getElementById('audience').value.trim() || 'широка аудиторія';
+  const offer = document.getElementById('offer').value.trim();
+
+  panelTitle.textContent = `${card.n}. ${card.title}`;
+  panel.classList.add('show');
+  output.textContent = 'Генерую...';
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  const contextLine = `Ніша: ${niche}. Аудиторія: ${audience}.` + (offer ? ` Продукт/проблема: ${offer}.` : '');
+
+  try {
+    const response = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cardIndex: i, niche, audience, offer })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      output.textContent = data.error || 'Сталася помилка генерації. Спробуй ще раз.';
+      return;
+    }
+    const text = (data.text || '').trim();
+    output.textContent = text || 'Не вдалося отримати відповідь. Спробуй ще раз.';
+  } catch (err) {
+    output.textContent = 'Сталася помилка генерації. Перевір з\'єднання і спробуй ще раз.';
+    console.error(err);
+  }
+}
+</script>
+</body>
+</html>

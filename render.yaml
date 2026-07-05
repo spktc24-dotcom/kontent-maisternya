@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: kontent-maisternya
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: BOT_TOKEN
+        sync: false
