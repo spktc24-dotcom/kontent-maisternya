@@ -6,7 +6,7 @@ const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
 const { cards, generateContent, notifyTelegram } = require('./content');
-const { startBot } = require('./bot');
+const { startBot, getAdminChatId } = require('./bot');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,7 +39,8 @@ app.post('/api/generate', async (req, res) => {
     notifyTelegram(
       `🌐 *Нова генерація з сайту*\n` +
       `Картка: ${card.n}. ${card.title}\n` +
-      `Ніша: ${niche || '—'}\nАудиторія: ${audience || '—'}\n\n${text}`
+      `Ніша: ${niche || '—'}\nАудиторія: ${audience || '—'}\n\n${text}`,
+      getAdminChatId()
     ); // навмисно без await — не має затримувати відповідь сайту користувачу
 
     res.json({ text, sessionId });

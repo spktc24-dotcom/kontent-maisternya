@@ -87,17 +87,17 @@ async function generateContent(cardIndex, context, history = []) {
 // Надсилає копію будь-якої генерації в Telegram власнику (ADMIN_CHAT_ID).
 // Мовчки нічого не робить, якщо BOT_TOKEN або ADMIN_CHAT_ID не задані —
 // це не критична функція, і вона ніколи не повинна ламати основну генерацію.
-async function notifyTelegram(text) {
+async function notifyTelegram(text, chatId) {
   const BOT_TOKEN = process.env.BOT_TOKEN;
-  const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
-  if (!BOT_TOKEN || !ADMIN_CHAT_ID) return;
+  const targetChatId = chatId || process.env.ADMIN_CHAT_ID;
+  if (!BOT_TOKEN || !targetChatId) return;
 
   try {
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chat_id: ADMIN_CHAT_ID,
+        chat_id: targetChatId,
         text: text.slice(0, 4000), // Telegram обмежує повідомлення ~4096 символів
         parse_mode: 'Markdown'
       })

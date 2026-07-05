@@ -4,6 +4,15 @@
 const TelegramBot = require('node-telegram-bot-api');
 const { cards, generateContent } = require('./content');
 
+// Chat ID останньої людини, яка написала боту /start — саме сюди
+// сервер надсилатиме дублікати генерацій з сайту. Живе в пам'яті процесу:
+// достатньо написати /start один раз після кожного деплою.
+let adminChatId = process.env.ADMIN_CHAT_ID || null;
+
+function getAdminChatId() {
+  return adminChatId;
+}
+
 function startBot() {
   const BOT_TOKEN = process.env.BOT_TOKEN;
   if (!BOT_TOKEN) {
@@ -37,7 +46,8 @@ function startBot() {
 
   bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
-    console.log(`Chat ID для ADMIN_CHAT_ID: ${chatId}`);
+    adminChatId = chatId;
+    console.log(`Запам'ятав chat ID для дублювання генерацій з сайту: ${chatId}`);
     userState.set(chatId, { step: 'ask_niche', niche: '', audience: '', offer: '', history: {} });
     bot.sendMessage(chatId,
       '👋 Вітаю в *Контент-майстерні*!\n\nЦе безкоштовний генератор контенту й реклами для блогу: 8 готових гілок — від оферу до запуску таргету.\n\nСпочатку заповнимо контекст. Напиши свою *нішу/тему* блогу:',
@@ -113,4 +123,4 @@ function startBot() {
   return bot;
 }
 
-module.exports = { startBot };
+module.exports = { startBot, getAdminChatId };
