@@ -339,15 +339,22 @@
   button.btn:disabled{opacity:.5; cursor:not-allowed;}
 
   /* Анімований текст кнопки: при наведенні поточний напис зсувається вгору,
-     а знизу з'являється дублікат (як AnimatedText у референсі) */
+     а знизу з'являється дублікат (як AnimatedText у референсі).
+     .anim-text - обгортка з ФІКСОВАНОЮ висотою в 1 рядок, яка й ховає дублікат. */
+  .anim-text{
+    display:inline-block;
+    height:1.2em;
+    line-height:1.2;
+    overflow:hidden;
+    vertical-align:middle;
+  }
   .anim-text-inner{
-    display:inline-flex;
+    display:flex;
     flex-direction:column;
     transition: transform .28s cubic-bezier(.22,1,.36,1);
-    line-height:1.2;
   }
   button.btn:hover .anim-text-inner{ transform: translateY(-1.2em); }
-  .anim-text-current, .anim-text-dup{ display:block; }
+  .anim-text-current, .anim-text-dup{ display:block; height:1.2em; line-height:1.2; }
   .output{
     white-space:pre-wrap;
     font-family:'IBM Plex Mono', monospace;
@@ -487,14 +494,14 @@
     <div class="panel-head">
       <h3 id="panelTitle">—</h3>
       <div class="actions">
-        <button class="btn secondary" id="copyBtn"><span class="anim-text-inner"><span class="anim-text-current">Скопіювати</span><span class="anim-text-dup">Скопіювати</span></span></button>
-        <button class="btn secondary" id="closeBtn"><span class="anim-text-inner"><span class="anim-text-current">Закрити</span><span class="anim-text-dup">Закрити</span></span></button>
+        <button class="btn secondary" id="copyBtn"><span class="anim-text"><span class="anim-text-inner"><span class="anim-text-current">Скопіювати</span><span class="anim-text-dup">Скопіювати</span></span></span></button>
+        <button class="btn secondary" id="closeBtn"><span class="anim-text"><span class="anim-text-inner"><span class="anim-text-current">Закрити</span><span class="anim-text-dup">Закрити</span></span></span></button>
       </div>
     </div>
 
     <div class="card-fields" id="cardFields"></div>
     <div class="generate-btn-row">
-      <button class="btn" id="generateBtn"><span class="anim-text-inner"><span class="anim-text-current">Згенерувати</span><span class="anim-text-dup">Згенерувати</span></span></button>
+      <button class="btn" id="generateBtn"><span class="anim-text"><span class="anim-text-inner"><span class="anim-text-current">Згенерувати</span><span class="anim-text-dup">Згенерувати</span></span></span></button>
     </div>
 
     <div class="chips" id="topicChips"></div>
@@ -505,7 +512,7 @@
     <div class="refine-box" id="refineBox">
       <label>Що потрібно змінити чи адаптувати в цьому результаті?</label>
       <textarea id="refineInput" rows="2" placeholder="напр. зроби коротше, зміни тон на дружніший, адаптуй під іншу вікову групу..."></textarea>
-      <button class="btn" id="refineBtn"><span class="anim-text-inner"><span class="anim-text-current">Оновити результат</span><span class="anim-text-dup">Оновити результат</span></span></button>
+      <button class="btn" id="refineBtn"><span class="anim-text"><span class="anim-text-inner"><span class="anim-text-current">Оновити результат</span><span class="anim-text-dup">Оновити результат</span></span></span></button>
     </div>
   </div>
 
