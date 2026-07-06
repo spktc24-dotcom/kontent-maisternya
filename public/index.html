@@ -54,6 +54,10 @@
     position:relative;
     padding:36px 20px 8px;
   }
+  @keyframes ambient-bob{
+    0%, 100%{ translate: 0 0; }
+    50%{ translate: 0 -14px; }
+  }
   .hero-glow{
     content:"";
     position:absolute;
@@ -69,6 +73,7 @@
     pointer-events:none;
     z-index:0;
     will-change:transform;
+    animation: ambient-bob 7s ease-in-out infinite;
   }
   .hero > *:not(.hero-glow){ position:relative; z-index:1; }
   .eyebrow{
@@ -101,6 +106,10 @@
     margin:0 auto;
     line-height:1.55;
   }
+  @keyframes gentle-breathe{
+    0%, 100%{ scale: 1; }
+    50%{ scale: 1.025; }
+  }
   .free-tag{
     display:inline-block;
     margin-top:26px;
@@ -117,6 +126,7 @@
     padding:10px 22px;
     border-radius:999px;
     transition: background .15s ease, transform .15s ease;
+    animation: gentle-breathe 4s ease-in-out infinite;
   }
   .free-tag:hover{ background:rgba(255,255,255,.14); transform:translateY(-1px); }
 
@@ -211,12 +221,17 @@
     padding:22px 20px 20px;
     display:flex; flex-direction:column; gap:6px;
   }
+  @keyframes pin-bob{
+    0%, 100%{ transform:translateY(0); }
+    50%{ transform:translateY(-2.5px); }
+  }
   .carousel-card .layer.face::before{
     content:"";
     position:absolute; top:-9px; left:24px;
     width:14px; height:14px; border-radius:50%;
     background: radial-gradient(circle at 35% 30%, #e2685c, var(--pin));
     box-shadow:0 3px 4px rgba(0,0,0,.35);
+    animation: pin-bob 2.6s ease-in-out infinite;
   }
   .carousel-card.is-active .layer.face{ outline:2px solid var(--teal); }
   .carousel-card .num{
