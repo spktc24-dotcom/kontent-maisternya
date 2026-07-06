@@ -64,8 +64,12 @@
   .free-tag{
     display:inline-block;
     margin-top:18px;
-    background:var(--teal);
-    color:#eef7f3;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.14);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 8px 20px rgba(0,0,0,.25);
+    color:#f3f7f5;
     font-family:'IBM Plex Mono', monospace;
     font-size:12px;
     letter-spacing:.08em;
@@ -130,62 +134,99 @@
   }
 
   /* grid of cards */
-  .grid{
-    display:grid;
-    grid-template-columns:repeat(3, 1fr);
-    gap:26px 22px;
-  }
-  @media(max-width:820px){ .grid{grid-template-columns:repeat(2,1fr);} .fields{grid-template-columns:1fr;} }
-  @media(max-width:560px){ .grid{grid-template-columns:1fr;} }
-
-  .card{
-    background:var(--paper);
-    border-radius:4px;
-    padding:22px 20px 24px;
-    box-shadow:var(--shadow);
+  /* 3D карусель карток */
+  .carousel-wrap{
     position:relative;
-    cursor:pointer;
-    transition: transform .18s ease, box-shadow .18s ease;
-    min-height:150px;
-    display:flex;
-    flex-direction:column;
-    gap:6px;
+    height:420px;
+    margin-bottom:50px;
   }
-  .card:nth-child(odd){ transform: rotate(-1.1deg); }
-  .card:nth-child(even){ transform: rotate(1deg); }
-  .card:hover{ transform: rotate(0deg) translateY(-4px); box-shadow:0 16px 30px rgba(0,0,0,.4); }
-  .card.active{ transform: rotate(0deg) translateY(-4px); outline:2px solid var(--teal); }
-  .card::before{
+  .carousel-stage{
+    position:absolute; inset:0;
+    perspective:1350px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .carousel-track{
+    position:relative;
+    width:250px; height:320px;
+    transform-style:preserve-3d;
+  }
+  .carousel-card{
+    position:absolute; inset:0;
+    width:250px; height:320px;
+    transform-style:preserve-3d;
+    cursor:pointer;
+  }
+  .carousel-card .layer{
+    position:absolute; inset:0;
+    border-radius:6px;
+    backface-visibility:hidden;
+  }
+  .carousel-card .layer.mid{ background:#c9bd9a; }
+  .carousel-card .layer.face{
+    background:var(--paper);
+    box-shadow:var(--shadow);
+    padding:22px 20px 20px;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .carousel-card .layer.face::before{
     content:"";
     position:absolute; top:-9px; left:24px;
     width:14px; height:14px; border-radius:50%;
     background: radial-gradient(circle at 35% 30%, #e2685c, var(--pin));
     box-shadow:0 3px 4px rgba(0,0,0,.35);
   }
-  .num{
+  .carousel-card.is-active .layer.face{ outline:2px solid var(--teal); }
+  .carousel-card .num{
     font-family:'IBM Plex Mono', monospace;
     font-size:12px;
     color:var(--amber);
     font-weight:600;
   }
-  .card h3{
+  .carousel-card h3{
     font-family:'Fraunces', serif;
     font-size:19px;
     margin:2px 0 2px;
     font-weight:600;
   }
-  .card p{
+  .carousel-card p{
     font-size:13px;
     color:var(--ink-soft);
     margin:0;
     line-height:1.4;
   }
-  .card .go{
+  .carousel-card .go{
     margin-top:auto;
     font-family:'IBM Plex Mono', monospace;
     font-size:11px;
     color:var(--teal);
     letter-spacing:.04em;
+  }
+  .carousel-nav{
+    position:absolute; top:50%; transform:translateY(-50%);
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.16);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 10px 25px rgba(0,0,0,.35);
+    width:44px; height:44px;
+    border-radius:50%; cursor:pointer; font-size:18px; color:var(--paper-2);
+    z-index:80;
+    transition: background .15s ease;
+  }
+  .carousel-nav:hover{ background:rgba(255,255,255,.18); }
+  .carousel-nav.prev{ left:6px; }
+  .carousel-nav.next{ right:6px; }
+  .carousel-hint{
+    text-align:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:#8a8676;
+    margin-top:-30px;
+    margin-bottom:20px;
+  }
+  @media(max-width:640px){
+    .carousel-wrap{ height:360px; }
+    .carousel-track, .carousel-card{ width:210px; height:270px; }
   }
 
   /* output panel */
@@ -314,19 +355,26 @@
     font-size:12px;
     font-family:'IBM Plex Mono', monospace;
   }
+
+  @keyframes fade-rise{
+    from{ opacity:0; transform:translateY(16px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .fade-rise{ opacity:0; }
+  .fade-rise.in-view{ animation: fade-rise .8s ease-out both; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <div class="hero">
+  <div class="hero fade-rise">
     <div class="eyebrow">workshop · 8 гілок контенту</div>
     <h1>Контент-майстерня</h1>
     <p class="sub">Заповни контекст один раз — і вибирай будь-яку картку. Кожен результат враховує маркетингову стратегію, логіку алгоритму Instagram і, де доречно, план запуску таргетованої реклами.</p>
     <div class="free-tag">Повністю безкоштовно · без реєстрації</div>
   </div>
 
-  <div class="context">
+  <div class="context fade-rise" style="animation-delay:.1s">
     <h2>01. Контекст твого блогу</h2>
     <div class="fields">
       <div class="field">
@@ -344,7 +392,14 @@
     </div>
   </div>
 
-  <div class="grid" id="grid"></div>
+  <div class="carousel-wrap fade-rise" style="animation-delay:.2s">
+    <div class="carousel-stage">
+      <div class="carousel-track" id="carouselTrack"></div>
+    </div>
+    <button class="carousel-nav prev" id="carouselPrev" aria-label="Попередня картка">‹</button>
+    <button class="carousel-nav next" id="carouselNext" aria-label="Наступна картка">›</button>
+  </div>
+  <div class="carousel-hint">рухай мишкою над картками · клікни, щоб відкрити</div>
 
   <div class="panel" id="panel">
     <div class="panel-head">
@@ -372,7 +427,7 @@
     </div>
   </div>
 
-  <footer>кожна наступна генерація враховує попередні · пам'ять живе, поки відкрита вкладка</footer>
+  <footer class="fade-rise">кожна наступна генерація враховує попередні · пам'ять живе, поки відкрита вкладка</footer>
 </div>
 
 <script>
@@ -430,15 +485,119 @@ const cards = [
     ] }
 ];
 
-const grid = document.getElementById('grid');
+// ---- 3D карусель карток (адаптовано з референсу: перспектива, паралакс від миші, об'ємна товщина) ----
+const track = document.getElementById('carouselTrack');
+const cardEls = [];
+
 cards.forEach((c, i) => {
   const el = document.createElement('div');
-  el.className = 'card';
+  el.className = 'carousel-card';
   el.dataset.index = i;
-  el.innerHTML = `<div class="num">${c.n}</div><h3>${c.title}</h3><p>${c.desc}</p><div class="go">натисни, щоб відкрити ↗</div>`;
-  el.addEventListener('click', () => openCard(i, el));
-  grid.appendChild(el);
+  el.innerHTML = `
+    <div class="layer mid" style="transform:translateZ(-2px)"></div>
+    <div class="layer mid" style="transform:translateZ(-1px)"></div>
+    <div class="layer face">
+      <div class="num">${c.n}</div>
+      <h3>${c.title}</h3>
+      <p>${c.desc}</p>
+      <div class="go">натисни, щоб відкрити ↗</div>
+    </div>`;
+  el.addEventListener('click', () => {
+    targetIndex = i;
+    openCard(i);
+  });
+  track.appendChild(el);
+  cardEls.push(el);
 });
+
+const cardCount = cards.length;
+let currentIndexFloat = 0;
+let targetIndex = 0;
+const mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
+
+window.addEventListener('mousemove', (e) => {
+  const rx = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+  const ry = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+  mouse.targetX = Math.max(-1, Math.min(1, rx));
+  mouse.targetY = Math.max(-1, Math.min(1, ry));
+});
+document.addEventListener('mouseleave', () => { mouse.targetX = 0; mouse.targetY = 0; });
+
+document.getElementById('carouselPrev').addEventListener('click', () => { targetIndex -= 1; });
+document.getElementById('carouselNext').addEventListener('click', () => { targetIndex += 1; });
+
+function carouselRenderLoop() {
+  // Плавно доганяємо ціль (замість постійного авто-руху конвеєра — щоб не заважати клікати)
+  let diff = targetIndex - currentIndexFloat;
+  // Обираємо найкоротший шлях по колу
+  while (diff > cardCount / 2) diff -= cardCount;
+  while (diff < -cardCount / 2) diff += cardCount;
+  currentIndexFloat += diff * 0.12;
+
+  mouse.x += (mouse.targetX - mouse.x) * 0.08;
+  mouse.y += (mouse.targetY - mouse.y) * 0.08;
+
+  const cardH = window.innerWidth <= 640 ? 270 : 320;
+  const D = 1350;
+  const gap = 26;
+  const peekAmount = -40;
+
+  for (let i = 0; i < cardCount; i++) {
+    const el = cardEls[i];
+    let offset = i - currentIndexFloat;
+    const half = cardCount / 2;
+    while (offset > half) offset -= cardCount;
+    while (offset < -half) offset += cardCount;
+
+    const absOffset = Math.abs(offset);
+    const sign = Math.sign(offset);
+
+    if (absOffset > 3) { el.style.visibility = 'hidden'; continue; }
+    el.style.visibility = 'visible';
+    el.classList.toggle('is-active', absOffset < 0.05);
+
+    let y = 0, z = 0, rot = 0;
+    if (absOffset <= 1) {
+      const t = absOffset;
+      const eT = t * t * (3 - 2 * t);
+      y = -sign * (eT * (cardH + gap));
+      z = 400 + eT * (220 - 400);
+      rot = eT * 132;
+    } else if (absOffset <= 2) {
+      const t = absOffset - 1;
+      const eT = t * t * (3 - 2 * t);
+      const yStart = cardH + gap, zStart = 220, rotStart = 132;
+      const zEnd = -60, rotEnd = 175;
+      const sEnd = D / (D - zEnd);
+      const yEnd = (window.innerHeight / 2 - peekAmount) / sEnd - (cardH / 2);
+      y = -sign * (yStart + eT * (yEnd - yStart));
+      z = zStart + eT * (zEnd - zStart);
+      rot = rotStart + eT * (rotEnd - rotStart);
+    } else {
+      const t = Math.min(absOffset - 2, 1);
+      const eT = t * t * (3 - 2 * t);
+      const zStart = -60, rotStart = 175, zEnd3 = -250, rotEnd3 = 195;
+      const sEnd2 = D / (D - zStart);
+      const yEnd2 = (window.innerHeight / 2 - peekAmount) / sEnd2 - (cardH / 2);
+      const sEnd3 = D / (D - zEnd3);
+      const yEnd3 = (window.innerHeight / 2 + 100) / sEnd3 + (cardH / 2);
+      y = -sign * (yEnd2 + eT * (yEnd3 - yEnd2));
+      z = zStart + eT * (zEnd3 - zStart);
+      rot = rotStart + eT * (rotEnd3 - rotStart);
+    }
+
+    const centerFactor = Math.max(0, 1 - absOffset);
+    const tiltX = -mouse.y * 10 * centerFactor;
+    const tiltY = mouse.x * 12 * centerFactor;
+    const localRot = -sign * rot;
+
+    el.style.zIndex = Math.round(z).toString();
+    el.style.transform = `translateY(${y.toFixed(2)}px) translateZ(${z.toFixed(2)}px) rotateX(${(localRot + tiltX).toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg)`;
+  }
+
+  requestAnimationFrame(carouselRenderLoop);
+}
+requestAnimationFrame(carouselRenderLoop);
 
 const panel = document.getElementById('panel');
 const panelTitle = document.getElementById('panelTitle');
@@ -457,7 +616,6 @@ let currentCardIndex = null;
 closeBtn.addEventListener('click', () => {
   panel.classList.remove('show');
   refineBox.classList.remove('show');
-  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
 });
 
 copyBtn.addEventListener('click', async () => {
@@ -562,10 +720,8 @@ async function runGeneration(i, topic, extraFields) {
   }
 }
 
-function openCard(i, el) {
+function openCard(i) {
   const card = cards[i];
-  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
   currentCardIndex = i;
 
   panelTitle.textContent = `${card.n}. ${card.title}`;
@@ -658,6 +814,16 @@ refineBtn.addEventListener('click', async () => {
     refineBtn.textContent = originalLabel;
   }
 });
+// ---- Fade-up анімація появи блоків при скролі (once, як whileInView у референсі) ----
+const fadeObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('in-view');
+      fadeObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15 });
+document.querySelectorAll('.fade-rise').forEach(el => fadeObserver.observe(el));
 </script>
 </body>
 </html>
