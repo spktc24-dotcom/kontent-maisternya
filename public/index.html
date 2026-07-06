@@ -32,6 +32,21 @@
     font-family:'Inter', sans-serif;
     padding: 40px 20px 80px;
   }
+  .bg-video{
+    position:fixed; inset:0;
+    width:100%; height:100%;
+    object-fit:cover;
+    z-index:-2;
+    filter:brightness(.5) saturate(1.15);
+  }
+  .bg-overlay{
+    position:fixed; inset:0;
+    z-index:-1;
+    background:
+      radial-gradient(ellipse at 25% 15%, rgba(201,138,44,.12), transparent 60%),
+      radial-gradient(ellipse at 75% 55%, rgba(60,110,99,.16), transparent 60%),
+      linear-gradient(180deg, rgba(35,40,31,.5) 0%, rgba(35,40,31,.82) 55%, var(--board) 100%);
+  }
   .wrap{max-width:1080px;margin:0 auto;}
   .hero{
     text-align:center;
@@ -406,6 +421,10 @@
 </style>
 </head>
 <body>
+<video class="bg-video" autoplay muted loop playsinline>
+  <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260411_104032_69319010-2458-492b-b04d-b40a5dfa4482.mp4" type="video/mp4">
+</video>
+<div class="bg-overlay"></div>
 <div class="wrap">
 
   <div class="hero fade-rise">
