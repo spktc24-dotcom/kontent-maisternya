@@ -39,7 +39,7 @@
     position:relative;
     padding:36px 20px 8px;
   }
-  .hero::before{
+  .hero-glow{
     content:"";
     position:absolute;
     top:-60px; left:50%;
@@ -53,8 +53,9 @@
     filter:blur(38px);
     pointer-events:none;
     z-index:0;
+    will-change:transform;
   }
-  .hero > *{ position:relative; z-index:1; }
+  .hero > *:not(.hero-glow){ position:relative; z-index:1; }
   .eyebrow{
     font-family:'IBM Plex Mono', monospace;
     letter-spacing:.18em;
@@ -291,6 +292,8 @@
     cursor:pointer;
     background:var(--teal);
     color:#eef7f3;
+    position:relative;
+    overflow:hidden;
   }
   button.btn.secondary{
     background:transparent;
@@ -298,6 +301,17 @@
     border:1.5px solid rgba(42,33,24,.3);
   }
   button.btn:disabled{opacity:.5; cursor:not-allowed;}
+
+  /* Анімований текст кнопки: при наведенні поточний напис зсувається вгору,
+     а знизу з'являється дублікат (як AnimatedText у референсі) */
+  .anim-text-inner{
+    display:inline-flex;
+    flex-direction:column;
+    transition: transform .28s cubic-bezier(.22,1,.36,1);
+    line-height:1.2;
+  }
+  button.btn:hover .anim-text-inner{ transform: translateY(-1.2em); }
+  .anim-text-current, .anim-text-dup{ display:block; }
   .output{
     white-space:pre-wrap;
     font-family:'IBM Plex Mono', monospace;
@@ -395,6 +409,7 @@
 <div class="wrap">
 
   <div class="hero fade-rise">
+    <div class="hero-glow" id="heroGlow"></div>
     <div class="eyebrow">workshop · 8 гілок контенту</div>
     <h1>Контент-<em>майстерня</em></h1>
     <p class="sub">Заповни контекст один раз — і вибирай будь-яку картку. Кожен результат враховує маркетингову стратегію, логіку алгоритму Instagram і, де доречно, план запуску таргетованої реклами.</p>
@@ -432,14 +447,14 @@
     <div class="panel-head">
       <h3 id="panelTitle">—</h3>
       <div class="actions">
-        <button class="btn secondary" id="copyBtn">Скопіювати</button>
-        <button class="btn secondary" id="closeBtn">Закрити</button>
+        <button class="btn secondary" id="copyBtn"><span class="anim-text-inner"><span class="anim-text-current">Скопіювати</span><span class="anim-text-dup">Скопіювати</span></span></button>
+        <button class="btn secondary" id="closeBtn"><span class="anim-text-inner"><span class="anim-text-current">Закрити</span><span class="anim-text-dup">Закрити</span></span></button>
       </div>
     </div>
 
     <div class="card-fields" id="cardFields"></div>
     <div class="generate-btn-row">
-      <button class="btn" id="generateBtn">Згенерувати</button>
+      <button class="btn" id="generateBtn"><span class="anim-text-inner"><span class="anim-text-current">Згенерувати</span><span class="anim-text-dup">Згенерувати</span></span></button>
     </div>
 
     <div class="chips" id="topicChips"></div>
@@ -450,7 +465,7 @@
     <div class="refine-box" id="refineBox">
       <label>Що потрібно змінити чи адаптувати в цьому результаті?</label>
       <textarea id="refineInput" rows="2" placeholder="напр. зроби коротше, зміни тон на дружніший, адаптуй під іншу вікову групу..."></textarea>
-      <button class="btn" id="refineBtn">Оновити результат</button>
+      <button class="btn" id="refineBtn"><span class="anim-text-inner"><span class="anim-text-current">Оновити результат</span><span class="anim-text-dup">Оновити результат</span></span></button>
     </div>
   </div>
 
@@ -626,6 +641,18 @@ function carouselRenderLoop() {
 }
 requestAnimationFrame(carouselRenderLoop);
 
+// Хелпери для зміни тексту кнопок так, щоб не ламати структуру hover-анімації (anim-text-current/-dup)
+function setBtnText(btn, text) {
+  const current = btn.querySelector('.anim-text-current');
+  const dup = btn.querySelector('.anim-text-dup');
+  if (current) { current.textContent = text; if (dup) dup.textContent = text; }
+  else { btn.textContent = text; }
+}
+function getBtnText(btn) {
+  const current = btn.querySelector('.anim-text-current');
+  return current ? current.textContent : btn.textContent;
+}
+
 const panel = document.getElementById('panel');
 const panelTitle = document.getElementById('panelTitle');
 const output = document.getElementById('output');
@@ -648,10 +675,10 @@ closeBtn.addEventListener('click', () => {
 copyBtn.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(output.textContent);
-    copyBtn.textContent = 'Скопійовано ✓';
-    setTimeout(() => copyBtn.textContent = 'Скопіювати', 1500);
+    setBtnText(copyBtn, 'Скопійовано ✓');
+    setTimeout(() => setBtnText(copyBtn, 'Скопіювати'), 1500);
   } catch(e) {
-    copyBtn.textContent = 'Не вдалось скопіювати';
+    setBtnText(copyBtn, 'Не вдалось скопіювати');
   }
 });
 
@@ -775,9 +802,9 @@ generateBtn.addEventListener('click', async () => {
 
   // Якщо картка передбачає тему, і людина її не вказала — спершу пропонуємо варіанти на вибір
   if (card.topicLabel && !topic) {
-    const originalLabel = generateBtn.textContent;
+    const originalLabel = getBtnText(generateBtn);
     generateBtn.disabled = true;
-    generateBtn.textContent = 'Підбираю теми...';
+    setBtnText(generateBtn, 'Підбираю теми...');
     output.textContent = 'Підбираю кілька варіантів теми на вибір...';
     try {
       const { niche, audience, offer } = getContext();
@@ -807,7 +834,7 @@ generateBtn.addEventListener('click', async () => {
       output.textContent = err.message || 'Не вдалось підібрати теми. Спробуй ще раз.';
     } finally {
       generateBtn.disabled = false;
-      generateBtn.textContent = originalLabel;
+      setBtnText(generateBtn, originalLabel);
     }
     return;
   }
@@ -823,9 +850,9 @@ refineBtn.addEventListener('click', async () => {
   }
   if (currentCardIndex === null) return;
 
-  const originalLabel = refineBtn.textContent;
+  const originalLabel = getBtnText(refineBtn);
   refineBtn.disabled = true;
-  refineBtn.textContent = 'Оновлюю...';
+  setBtnText(refineBtn, 'Оновлюю...');
   const prevOutput = output.textContent;
   output.textContent = 'Оновлюю результат за твоїм запитом...';
 
@@ -838,7 +865,7 @@ refineBtn.addEventListener('click', async () => {
     alert(err.message || 'Не вдалося оновити результат. Спробуй ще раз.');
   } finally {
     refineBtn.disabled = false;
-    refineBtn.textContent = originalLabel;
+    setBtnText(refineBtn, originalLabel);
   }
 });
 // ---- Fade-up анімація появи блоків при скролі (once, як whileInView у референсі) ----
@@ -851,6 +878,22 @@ const fadeObserver = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.15 });
 document.querySelectorAll('.fade-rise').forEach(el => fadeObserver.observe(el));
+
+// ---- Легкий parallax для світлового тла hero (адаптовано з useTransform референсу) ----
+const heroGlow = document.getElementById('heroGlow');
+if (heroGlow) {
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      // Плавний рух від -30px до +30px залежно від прокрутки перших ~600px сторінки
+      const y = Math.max(-30, Math.min(30, (window.scrollY / 600) * 60 - 30));
+      heroGlow.style.transform = `translateX(-50%) translateY(${y.toFixed(1)}px)`;
+      ticking = false;
+    });
+  });
+}
 </script>
 </body>
 </html>
