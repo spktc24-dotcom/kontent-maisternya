@@ -598,10 +598,8 @@ function carouselRenderLoop() {
   mouse.x += (mouse.targetX - mouse.x) * 0.08;
   mouse.y += (mouse.targetY - mouse.y) * 0.08;
 
-  const cardH = window.innerWidth <= 640 ? 270 : 320;
-  const D = 1350;
-  const gap = 26;
-  const peekAmount = -40;
+  const cardW = window.innerWidth <= 640 ? 210 : 250;
+  const gap = window.innerWidth <= 640 ? 26 : 46;
 
   for (let i = 0; i < cardCount; i++) {
     const el = cardEls[i];
@@ -613,47 +611,36 @@ function carouselRenderLoop() {
     const absOffset = Math.abs(offset);
     const sign = Math.sign(offset);
 
-    if (absOffset > 3) { el.style.visibility = 'hidden'; continue; }
+    if (absOffset > 2.6) { el.style.visibility = 'hidden'; continue; }
     el.style.visibility = 'visible';
     el.classList.toggle('is-active', absOffset < 0.05);
 
-    let y = 0, z = 0, rot = 0;
+    // Горизонтальний "coverflow": центр — на видноті, ±1 і ±2 видно збоку, менші й розгорнуті
+    let x = 0, z = 0, rotY = 0, scale = 1;
     if (absOffset <= 1) {
       const t = absOffset;
       const eT = t * t * (3 - 2 * t);
-      y = -sign * (eT * (cardH + gap));
-      z = 400 + eT * (220 - 400);
-      rot = eT * 132;
-    } else if (absOffset <= 2) {
-      const t = absOffset - 1;
-      const eT = t * t * (3 - 2 * t);
-      const yStart = cardH + gap, zStart = 220, rotStart = 132;
-      const zEnd = -60, rotEnd = 175;
-      const sEnd = D / (D - zEnd);
-      const yEnd = (window.innerHeight / 2 - peekAmount) / sEnd - (cardH / 2);
-      y = -sign * (yStart + eT * (yEnd - yStart));
-      z = zStart + eT * (zEnd - zStart);
-      rot = rotStart + eT * (rotEnd - rotStart);
+      x = sign * eT * (cardW * 0.62 + gap);
+      z = -eT * 130;
+      rotY = -sign * eT * 34;
+      scale = 1 - eT * 0.16;
     } else {
-      const t = Math.min(absOffset - 2, 1);
+      const t = Math.min(absOffset - 1, 1);
       const eT = t * t * (3 - 2 * t);
-      const zStart = -60, rotStart = 175, zEnd3 = -250, rotEnd3 = 195;
-      const sEnd2 = D / (D - zStart);
-      const yEnd2 = (window.innerHeight / 2 - peekAmount) / sEnd2 - (cardH / 2);
-      const sEnd3 = D / (D - zEnd3);
-      const yEnd3 = (window.innerHeight / 2 + 100) / sEnd3 + (cardH / 2);
-      y = -sign * (yEnd2 + eT * (yEnd3 - yEnd2));
-      z = zStart + eT * (zEnd3 - zStart);
-      rot = rotStart + eT * (rotEnd3 - rotStart);
+      const xStart = cardW * 0.62 + gap;
+      const xEnd = xStart + cardW * 0.5 + gap * 0.6;
+      x = sign * (xStart + eT * (xEnd - xStart));
+      z = -130 - eT * 150;
+      rotY = -sign * (34 + eT * 22);
+      scale = 0.84 - eT * 0.24;
     }
 
     const centerFactor = Math.max(0, 1 - absOffset);
-    const tiltX = -mouse.y * 10 * centerFactor;
-    const tiltY = mouse.x * 12 * centerFactor;
-    const localRot = -sign * rot;
+    const tiltX = -mouse.y * 8 * centerFactor;
+    const tiltY = mouse.x * 10 * centerFactor;
 
-    el.style.zIndex = Math.round(z).toString();
-    el.style.transform = `translateY(${y.toFixed(2)}px) translateZ(${z.toFixed(2)}px) rotateX(${(localRot + tiltX).toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg)`;
+    el.style.zIndex = Math.round(100 - absOffset * 10).toString();
+    el.style.transform = `translateX(${x.toFixed(2)}px) translateZ(${z.toFixed(2)}px) rotateY(${(rotY + tiltY).toFixed(2)}deg) rotateX(${tiltX.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
   }
 
   requestAnimationFrame(carouselRenderLoop);
