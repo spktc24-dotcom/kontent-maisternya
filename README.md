@@ -101,3 +101,31 @@ ANTHROPIC_API_KEY=твій_ключ BOT_TOKEN=твій_токен npm start
 - Anthropic API — постійного безкоштовного тарифу немає, є невеликий пробний кредит для
   нових акаунтів. Кожна генерація коштує частки цента. Якщо сайт/бот стане популярним,
   має сенс додати ліміт генерацій на людину на день — скажи, і я додам цю логіку.
+
+---
+
+## Пряма публікація в Instagram і Threads
+
+Скрипт `social/publish.js` публікує напряму через офіційні API Meta, без сторонніх сервісів.
+Нові залежності не потрібні (Node 18+).
+
+**Підготовка:**
+1. Instagram-акаунт має бути професійним (Business або Creator).
+2. На [developers.facebook.com](https://developers.facebook.com) створи застосунок і додай продукти
+   **Instagram API (Instagram Login)** і **Threads API**.
+3. Згенеруй довгострокові токени й задай їх як змінні середовища `IG_TOKEN_1` і `THREADS_TOKEN_1`.
+4. Мережа має пропускати `graph.instagram.com` і `graph.threads.net`.
+
+**Команди:**
+```bash
+npm run social -- check                                        # перевірити обидва токени
+npm run social -- ig-photo    https://site/foto.jpg "Підпис"
+npm run social -- ig-carousel https://site/1.jpg,https://site/2.jpg "Підпис"
+npm run social -- ig-reel     https://site/video.mp4 "Підпис"
+npm run social -- ig-story    https://site/foto.jpg
+npm run social -- threads-text  "Текст"
+npm run social -- threads-image https://site/foto.jpg "Текст"
+npm run social -- threads-chain "Пост 1" "Пост 2" "Пост 3"     # ланцюжок відповідей
+npm run social -- refresh                                      # продовжити токени ще на 60 днів
+```
+Фото й відео мають бути доступні за публічним посиланням (Meta сама їх завантажує).
