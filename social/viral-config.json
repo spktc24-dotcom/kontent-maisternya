@@ -1,0 +1,19 @@
+{
+  "actor": "easyapi/threads-search-scraper",
+  "queryField": "searchQueries",
+  "queryAsArray": true,
+  "input": { "sortBy": "top", "maxItems": 50 },
+  "hours": 24,
+  "queries": [
+    "unpopular opinion",
+    "hot take",
+    "what do you think",
+    "controversial",
+    "непопулярна думка",
+    "що думаєте",
+    "питання до всіх",
+    "чесно кажучи",
+    "непопулярное мнение",
+    "что думаете"
+  ]
+}
