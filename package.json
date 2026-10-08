@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "social": "node social/publish.js"
+    "social": "NODE_USE_ENV_PROXY=1 node social/publish.js"
   },
   "dependencies": {
     "express": "^4.19.2",

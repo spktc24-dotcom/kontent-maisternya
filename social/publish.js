@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 // social/publish.js — пряма публікація в Instagram і Threads через офіційні API Meta
-// (без Metricool). Токени беруться тільки зі змінних середовища:
-//   IG_TOKEN_1      — довгостроковий токен Instagram API (Instagram Login), професійний акаунт
-//   THREADS_TOKEN_1 — довгостроковий токен Threads API
+// (без Metricool). Токени — двома способами:
+//   1) змінні середовища IG_TOKEN_1 / THREADS_TOKEN_1 (локально, Render тощо);
+//   2) Network secrets хмарного середовища Claude: проксі сам додає заголовок
+//      "Authorization: Bearer <токен>" до запитів на graph.instagram.com / graph.threads.net,
+//      тоді змінні не потрібні, а скрипт не бачить токена взагалі.
+// У хмарі Claude запускати з NODE_USE_ENV_PROXY=1 (npm run social це вже робить).
 //
 // Приклади:
 //   node social/publish.js check
@@ -20,14 +23,13 @@ try { require('dotenv').config(); } catch { /* без dotenv — беремо з
 const IG_BASE = `https://graph.instagram.com/${process.env.IG_API_VERSION || 'v23.0'}`;
 const TH_BASE = `https://graph.threads.net/${process.env.THREADS_API_VERSION || 'v1.0'}`;
 
+// Порожній токен = покладаємось на Network secret, який додає проксі.
 function token(name) {
-  const value = process.env[name];
-  if (!value) throw new Error(`Не задано змінну середовища ${name}`);
-  return value;
+  return process.env[name] || '';
 }
 
 async function call(method, url, params, accessToken) {
-  const body = new URLSearchParams({ ...params, access_token: accessToken });
+  const body = new URLSearchParams({ ...params, ...(accessToken && { access_token: accessToken }) });
   const full = method === 'GET' ? `${url}?${body}` : url;
   const res = await fetch(full, { method, body: method === 'GET' ? undefined : body });
   const data = await res.json().catch(() => ({}));
