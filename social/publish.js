@@ -2,8 +2,8 @@
 // social/publish.js — пряма публікація в Instagram і Threads через офіційні API Meta
 // (без Metricool). Токени — двома способами:
 //   1) змінні середовища IG_TOKEN_1 / THREADS_TOKEN_1 (локально, Render тощо);
-//   2) Network secrets хмарного середовища Claude: проксі сам додає заголовок
-//      "Authorization: Bearer <токен>" до запитів на graph.instagram.com / graph.threads.net,
+//   2) Network secrets хмарного середовища Claude, тип "Body parameter", назва access_token:
+//      проксі сам підставляє токен у тіло запитів на graph.instagram.com / graph.threads.net,
 //      тоді змінні не потрібні, а скрипт не бачить токена взагалі.
 // У хмарі Claude запускати з NODE_USE_ENV_PROXY=1 (npm run social це вже робить).
 //
@@ -28,15 +28,23 @@ function token(name) {
   return process.env[name] || '';
 }
 
+// Усі запити йдуть як POST з form-тілом: Network secret типу "Body parameter" вміє
+// підставляти access_token лише в тіло. Читання — через стандартний для Graph API
+// перемикач method=GET.
 async function call(method, url, params, accessToken) {
-  const body = new URLSearchParams({ ...params, ...(accessToken && { access_token: accessToken }) });
-  const full = method === 'GET' ? `${url}?${body}` : url;
-  const res = await fetch(full, { method, body: method === 'GET' ? undefined : body });
+  const body = new URLSearchParams({
+    ...params,
+    ...(method === 'GET' && { method: 'GET' }),
+    ...(accessToken && { access_token: accessToken }),
+  });
+  const res = await fetch(url, { method: 'POST', body });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.error) {
     const msg = data.error ? `${data.error.message} (код ${data.error.code})` : `HTTP ${res.status}`;
     throw new Error(`${method} ${url}: ${msg}`);
   }
+  // Посилання пагінації Meta містять access_token відкритим текстом — не показуємо їх.
+  if (data.paging) { delete data.paging.next; delete data.paging.previous; }
   return data;
 }
 
